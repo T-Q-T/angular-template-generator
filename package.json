@@ -1,8 +1,9 @@
 {
   "name": "angular-template-generate",
   "displayName": "angular-template-generate",
-  "description": "It can quikly create a angular custom template",
+  "description": "你的 angular 创建模版帕鲁",
   "version": "0.0.1",
+  "icon":"palu.jpeg",
   "engines": {
     "vscode": "^1.89.0"
   },
