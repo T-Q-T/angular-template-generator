@@ -1,6 +1,6 @@
 # angular-template-generate README
 
-This is the README for your extension "angular-template-generate". After writing up a brief description, we recommend including the following sections.
+这是一个快速生成 angular 常规模版的插件
 
 ## Features
 
