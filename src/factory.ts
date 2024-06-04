@@ -1,7 +1,19 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { firstLetterHumpFormatter, getComponentTemplate, getModuleTemplate, getPipeTemplate, getRouteModuleTemplate, getServiceTemplate } from './utils';
+import { firstLetterCamelCaseFormatter, processJSON, processJSONArr, removeQuotesFromKeys } from './utils';
+import { getBaseComponentTemplate, getBaseHtmlTemplate, getFormTableComponentTemplate, getFormTableTemplate, getModuleTemplate, getPipeTemplate, getRouteModuleTemplate, getServiceTemplate } from './template';
 
+export type ComponentType = '空' | '表单表格搜索组件' | '表格' | '表单'
+export interface ComponentOption {
+    isAutoDeclaration: string
+    createComponentType: ComponentType
+    isShowPageHeader: boolean
+    stSetting: any[]
+    sfSetting: any[]
+}
+type SchemaAny = any
+
+type ColumnAny = any
 /**
  * @description 基本操作类
  */
@@ -59,12 +71,23 @@ export class FileFactory {
  */
 export class CreateComponentFactory extends FileFactory {
 
-    constructor(basePath: string, name: string, opt: any) {
+    constructor(basePath: string, name: string, opt: Partial<ComponentOption>) {
         super(basePath, name)
-        this.isAutoDeclaration = opt.isAutoDeclaration
+        this.isAutoDeclaration = opt?.isAutoDeclaration
+        this.createComponentType = opt.createComponentType
+        this.isShowPageHeader = opt.isShowPageHeader
+        this.sfSetting = opt.sfSetting
+        this.stSetting = opt.stSetting
     }
 
-    isAutoDeclaration!: string
+    isAutoDeclaration?: string
+
+    createComponentType?: ComponentType
+
+    isShowPageHeader?: boolean
+
+    stSetting?: any[]
+    sfSetting?: any[]
 
 
     /**
@@ -103,40 +126,15 @@ export class CreateComponentFactory extends FileFactory {
             let newContent = content
             const regex = /(declarations:\s*\[[^\]]*?\])/s;
             const match = content.match(regex);
-            const hump = firstLetterHumpFormatter(this.name)
+            const CamelCase = firstLetterCamelCaseFormatter(this.name)
             if (match) {
-                const updatedContent = match[1].replace(/\]$/, `, ${hump}Component]`);
+                const updatedContent = match[1].replace(/\]$/, `, ${CamelCase}Component]`);
                 newContent = content.replace(match[1], updatedContent);
-                newContent = `import { ${hump}Component } from './components/${this.name}.component';\n${newContent}`
+                newContent = `import { ${CamelCase}Component } from './components/${this.name}/${this.name}.component';\n${newContent}`
             }
             this.createFile(parentModulePath as unknown as string, newContent);
         } catch (err) {
             console.error(err)
-        }
-    }
-
-
-
-    /**
-     * @description 创建基本 html 文件
-     * @param name 
-     * @param modulePath 
-     */
-    createHtmlTpl(name: string, modulePath: string) {
-        this.createFile(path.join(modulePath, `${name}.component.html`), `${name} module create!`);
-    }
-
-    /**
-     * @description 创建基本组件 ts 模版
-     * @param name 
-     * @param modulePath 
-     */
-    createComponentTpl(name: string, modulePath: string) {
-        const componentContent = getComponentTemplate(name as string);
-        this.createFile(path.join(modulePath, `${name}.component.ts`), componentContent);
-        if (this.isAutoDeclaration === '是') {
-            this.updateParentModuleDeclaration()
-
         }
     }
 
@@ -145,18 +143,105 @@ export class CreateComponentFactory extends FileFactory {
      * @param name 
      * @param modulePath 
      */
-    createScssTpl(name: string, modulePath: string) {
-        this.createFile(path.join(modulePath, `${name}.component.scss`), '::ng-deep{}');
+    createScssTpl() {
+        this.createFile(path.join(this.basePath, this.name, `${this.name}.component.scss`), '::ng-deep{}');
     }
 
+    createComponentFolder() {
+        this.createFold(path.join(this.basePath, this.name))
+    }
+
+    /**
+   * @description 构建 schema
+   * @returns 
+   */
+    buildSfData() {
+        if (!this.sfSetting) return
+        const result: SchemaAny = { properties: {} }
+        this.sfSetting?.forEach((item, index) => {
+            const res: any = {
+                type: 'string',
+                title: item.title,
+                ui: {}
+            }
+            if (index === 0) {
+                res.type === 'string'
+                res.ui.widget = 'select'
+                res.ui.width = 100
+            }
+            result.properties[item.key] = res
+        })
+        return removeQuotesFromKeys(JSON.stringify(result))
+    }
+
+    /**
+     * @description 构建 column
+     */
+    buildStData() {
+        if (!this.stSetting) return
+        let result = this.stSetting?.map((item) => {
+            return {
+                title: item.title,
+                index: item.key
+            }
+        })
+        return removeQuotesFromKeys(JSON.stringify(result))
+    }
+
+    /**
+     * @description 获取组件的 html 模版
+     * @returns 
+     */
+    getHtmlTpl() {
+        if (this.createComponentType === '空') return getBaseHtmlTemplate(this.name)
+        if (this.createComponentType === '表单表格搜索组件') return getFormTableTemplate(this.isShowPageHeader)
+        return ''
+    }
+
+
+    /**
+     * @description 获取组件内容模版
+     * @returns 
+     */
+    getComponentTpl() {
+        if (this.createComponentType === '空') return getBaseComponentTemplate(this.name as string);
+        if (this.createComponentType === '表单表格搜索组件') return getFormTableComponentTemplate(this.name, this.buildSfData(), this.buildStData())
+        return ''
+    }
+
+
+    /**
+     * @description 创建基本 html 文件
+     * @param name 
+     * @param modulePath 
+     */
+    createHtmlTpl() {
+        this.createFile(path.join(this.basePath, this.name, `${this.name}.component.html`), this.getHtmlTpl());
+    }
+
+    /**
+     * @description 创建基本组件 ts 模版
+     * @param name 
+     * @param modulePath 
+     */
+    createComponentTpl() {
+        const componentContent = this.getComponentTpl()
+        this.createFile(path.join(this.basePath, this.name, `${this.name}.component.ts`), componentContent);
+        if (this.isAutoDeclaration === '是') {
+            this.updateParentModuleDeclaration()
+
+        }
+    }
+
+
     create() {
-        this.createHtmlTpl(this.name, this.basePath);
-        this.createComponentTpl(this.name, this.basePath);
-        this.createScssTpl(this.name, this.basePath);
+        this.createComponentFolder()
+        this.createHtmlTpl();
+        this.createComponentTpl();
+        this.createScssTpl();
     }
 
 }
-
 
 
 /**
@@ -249,10 +334,10 @@ export class CreateModuleFactory extends CreateComponentFactory {
         this.createBaseFiles(this.basePath);
         this.createPipeTpl(this.name, this.basePath)
         this.createModuleTpl(this.name, this.basePath, this.isCreateRouteModule === '是');
-        this.createHtmlTpl(this.name, this.basePath);
-        this.createComponentTpl(this.name, this.basePath);
+        this.createHtmlTpl();
+        this.createComponentTpl();
         this.createServiceTpl(this.name, this.basePath)
-        this.createScssTpl(this.name, this.basePath);
+        this.createScssTpl();
         if (this.isCreateRouteModule === '是') {
             this.createRouteModuleTpl(this.name, this.basePath);
         }

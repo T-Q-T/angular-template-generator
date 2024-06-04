@@ -1,121 +1,13 @@
-/**
- * @description 获取组件 ts 基本模版
- * @param name  组件名 
- * @returns 
- */
-export function getComponentTemplate(name: string) {
-
-  const humpName = firstLetterHumpFormatter(name as string);
-  return `import { Component, OnInit } from '@angular/core';
-
-    @Component({
-      selector: '${name}',
-      templateUrl: './${name}.component.html',
-      styleUrls: ['./${name}.component.scss']
-    })
-    export class ${humpName}Component implements OnInit {
-    
-      constructor() { }
-    
-      ngOnInit() {
-      }
-    
-    }
-    `;
-}
-
-
-
-/**
- * @description 获取模块基本模版
- * @param name  模块名
- * @returns 
- */
-export function getModuleTemplate(name: string, isCreateRouteModule: boolean = false) {
-
-  const humpName = firstLetterHumpFormatter(name as string);
-
-  const routeImportStatement = isCreateRouteModule ? `import { ${humpName}RouteModule } from './${name}.route';` : ''
-  const routeModuleStatement = isCreateRouteModule ? `${humpName}RouteModule,` : ''
-  return `import { NgModule } from '@angular/core';
-  import { CommonModule } from '@angular/common';
-  import { ${humpName}Component } from './${name}.component';
-  import { SharedModule } from '@shared';
-  ${routeImportStatement}
-
-  @NgModule({
-    imports: [CommonModule,${routeModuleStatement}SharedModule],
-    declarations: [${humpName}Component]
-  })
-  export class ${humpName}Module { }
-  `;
-}
-
-export function getPipeTemplate(name: string) {
-  const humpName = firstLetterHumpFormatter(name as string);
-  return `import { Pipe, PipeTransform } from '@angular/core';
-
-  @Pipe({
-    name: '${humpName}'
-  })
-  export class ${humpName}Pipe implements PipeTransform {
-  
-    transform(value: string): string {
-      return value
-    }
-  
-  }`
-}
-
-
-/**
- * @description 创建组件路由模块
- * @param name 
- */
-export function getRouteModuleTemplate(name: string) {
-  const humpName = firstLetterHumpFormatter(name as string);
-  return `import { NgModule } from '@angular/core';
-  import { RouterModule, Routes } from '@angular/router';
-  import { ${humpName}Component } from './${name}.component';
-  
-  
-  const routes: Routes = [
-      { path: '', component: ${humpName}Component }
-  ];
-  
-  @NgModule({
-      imports: [RouterModule.forChild(routes)],
-      exports: [RouterModule]
-  })
-  export class ${humpName}RouteModule { }
-  `
-}
-
-export function getServiceTemplate(name: string) {
-  const humpName = firstLetterHumpFormatter(name as string);
-  return `import { Injectable } from '@angular/core';
-
-  @Injectable({
-    providedIn: 'root'
-  })
-  export class ${humpName}Service {
-  
-  constructor() { }
-  
-  }
-  `
-}
-
 
 /**
  * @description 中分割线转驼峰
  * @param name 
  */
-export function firstLetterHumpFormatter(name: string) {
-  const hump = name.replace(/-(\w)/g, function (all, letter) {
+export function firstLetterCamelCaseFormatter(name: string) {
+  const CamelCase = name.replace(/-(\w)/g, function (all, letter) {
     return letter.toUpperCase();
   });
-  return capitalizeFirstLetter(hump)
+  return capitalizeFirstLetter(CamelCase)
 }
 
 /**
@@ -136,3 +28,40 @@ function capitalizeFirstLetter(str: string) {
 }
 
 
+
+/**
+ * @description 从 vsc 输入框中获取表单配置数据
+ * @param str 
+ * @returns 
+ */
+export function getSetting(str: string) {
+  let result
+  result = str.match(/[\(（].*?[\)）]/g)?.map(item => {
+    const [title, key] = item.slice(1, -1).split(/\，|\,/);
+    return { title, key };
+  }) || [];
+  if (result.length) return result
+  // 若用户只填一项时,自动帮他的 key 设置空
+  result = str.split(/\，|\,/).map((item,index) => {
+    return { title:item, key:`${index}` };
+  })
+  return result
+}
+
+
+export function removeQuotesFromKeys(jsonStr:string) {
+  // 使用正则表达式匹配键值对中的冒号
+  const regex = /"([^"]+)":/g;
+  // 使用 replace() 方法将冒号替换为空字符串
+  return jsonStr.replace(regex, '$1:');
+}
+
+export function processJSONArr(jsonString:string) {
+  const pairs = jsonString.slice(1, -1).split(',');
+  let result = '[';
+  for (const pair of pairs) {
+    result +=removeQuotesFromKeys(pair)+','
+  }
+  result = result.slice(0, -1) + ']';
+  return result;
+}
