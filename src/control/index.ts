@@ -5,7 +5,8 @@ import {
   CreateModuleFactory,
 } from "../factory";
 import * as path from "path";
-import { getSetting } from "../utils";
+import { getSetting, newGetSetting } from "../utils";
+import { FORM_TIP, TABLE_TIP } from "../const";
 
 // vsc 的命令行所有操作均放到这里,命令行逻辑发生的地方
 export function commandControl(context: vscode.ExtensionContext) {
@@ -26,7 +27,7 @@ export function commandControl(context: vscode.ExtensionContext) {
       switch (fileType) {
         case "Component": {
           createComponent(targetFolder);
-          formatterComponent(createPath)
+          formatterComponent(createPath);
           break;
         }
         case "Module": {
@@ -41,16 +42,18 @@ export function commandControl(context: vscode.ExtensionContext) {
 
 /**
  * @description 格式化组件文件
- * @param createPath 
+ * @param createPath
  */
-function formatterComponent(createPath:string) {
-  let formatterListen = // 监听文件打开事件
-    vscode.workspace.onDidOpenTextDocument((document) => {
-      if (!document.uri.fsPath.includes(createPath)) return;
-      if (!document.uri.fsPath.includes("component.ts")) return;
-      vscode.commands.executeCommand("editor.action.formatDocument");
-      formatterListen.dispose();
-    });
+function formatterComponent(createPath: string) {
+  let formatterListen = vscode.workspace.onDidOpenTextDocument((document) => {
+    if (
+      !document.uri.fsPath.includes(createPath) ||
+      !document.uri.fsPath.includes("component.ts")
+    )
+      return;
+    vscode.commands.executeCommand("editor.action.formatDocument");
+    formatterListen.dispose();
+  });
 }
 
 /**
@@ -103,28 +106,28 @@ async function createComponent(targetFolder: string) {
     }
     case "表单表格搜索组件": {
       sfSetting = await callVscInput(
-        "请输入表单配置,规则 (title,key),圆括号代表每一个 schema 的基本配置"
+        FORM_TIP
       );
       stSetting = await callVscInput(
-        "请输入 table 配置,规则 (title,index),圆括号代表每一个表格列配置"
+        TABLE_TIP
       );
       break;
     }
     case "表格": {
       stSetting = await callVscInput(
-        "请输入 table 配置,规则 (title,index),圆括号代表每一个表格列配置"
+        TABLE_TIP
       );
       break;
     }
     case "表单": {
       sfSetting = await callVscInput(
-        "请输入表单配置,规则 (title,key),圆括号代表每一个 schema 的基本配置"
+        FORM_TIP
       );
       break;
     }
   }
-  sfSetting = getSetting(sfSetting || "");
-  stSetting = getSetting(stSetting || "");
+  sfSetting = newGetSetting(sfSetting || "");
+  stSetting = newGetSetting(stSetting || "");
   const isAutoDeclaration = await callVscSelect(
     ["否", "是"],
     "是否自动声明至上层模块"
