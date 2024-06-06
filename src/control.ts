@@ -3,12 +3,12 @@ import {
   ComponentType,
   CreateComponentFactory,
   CreateModuleFactory,
-} from "../factory";
+} from "./factory";
 import * as path from "path";
-import { getSetting, newGetSetting } from "../utils";
-import { COMPONENTS, CREATE_TYPE, FORM_TIP, TABLE_TIP } from "../const";
+import { getSetting, newGetSetting } from "./utils";
+import { COMPONENTS, CREATE_TYPE, FORM_TIP, TABLE_TIP } from "./const";
 
-// vsc 的命令行所有操作均放到这里,命令行逻辑发生的地方
+// vsc 的命令行所有操作均放到这里,命令行逻辑控制
 export function commandControl(context: vscode.ExtensionContext) {
   let createPath = "";
   let disposable = vscode.commands.registerCommand(
@@ -16,10 +16,7 @@ export function commandControl(context: vscode.ExtensionContext) {
     async (resource: vscode.Uri) => {
       let targetFolder: string = getFilePath(resource);
       createPath = targetFolder;
-      const fileType = await callVscSelect(
-        CREATE_TYPE,
-        "选择创建的类型"
-      );
+      const fileType = await callVscSelect(CREATE_TYPE, "选择创建的类型");
 
       if (!fileType) {
         return;
@@ -76,7 +73,7 @@ async function createModuleFlow(targetFolder: string) {
   // 模块路径
   const foldPath = path.join(targetFolder, name as string);
   new CreateModuleFactory(foldPath, name, { isCreateRouteModule }).build();
-  vscode.window.showInformationMessage(`模块 ${name} 成功创建`);
+  callVscModal(`模块 ${name} 成功创建`);
 }
 
 /**
@@ -97,7 +94,7 @@ async function createComponentFlow(targetFolder: string) {
   if (!createComponentType) {
     return;
   }
-  if (createComponentType !== "空") {
+  if (createComponentType === "表单表格搜索组件") {
     isShowPageHeader = await callVscSelect(["否", "是"], "是否需要 pageHeader");
   }
   switch (createComponentType) {
@@ -105,30 +102,22 @@ async function createComponentFlow(targetFolder: string) {
       break;
     }
     case "表单表格搜索组件": {
-      sfSetting = await callVscInput(
-        FORM_TIP
-      );
-      stSetting = await callVscInput(
-        TABLE_TIP
-      );
+      sfSetting = await callVscInput(FORM_TIP);
+      stSetting = await callVscInput(TABLE_TIP);
       break;
     }
     case "表格": {
-      stSetting = await callVscInput(
-        TABLE_TIP
-      );
+      stSetting = await callVscInput(TABLE_TIP);
       break;
     }
     case "表单": {
-      sfSetting = await callVscInput(
-        FORM_TIP
-      );
+      sfSetting = await callVscInput(FORM_TIP);
       break;
     }
   }
   const isAutoDeclaration = await callVscSelect(
     ["否", "是"],
-    "是否自动声明至上层模块"
+    "是否自动将该组件声明至上层模块"
   );
   if (!isAutoDeclaration) {
     return;
@@ -141,7 +130,7 @@ async function createComponentFlow(targetFolder: string) {
     sfSetting,
     stSetting,
   }).build();
-  vscode.window.showInformationMessage(`模块 ${name} 成功创建`);
+  callVscModal(`组件 ${name} 成功创建`);
 }
 
 /**
@@ -192,4 +181,12 @@ function callVscSelect(
       resolve(res as string);
     });
   });
+}
+
+/**
+ * @description vsc 提示弹窗
+ * @param text 
+ */
+function callVscModal(text: string) {
+  vscode.window.showInformationMessage(text);
 }

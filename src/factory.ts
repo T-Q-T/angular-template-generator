@@ -7,15 +7,21 @@ import {
   newGetSetting,
 } from "./utils";
 import {
-  getBaseComponentTemplate,
-  getBaseHtmlTemplate,
-  getFormTableComponentTemplate,
-  getFormTableTemplate,
+  getBaseTs,
+  getBaseHtml,
+  getFormTs,
+  getFormTableTs,
+  getFormTableHtml,
+  getFormHtml,
   getModuleTemplate,
   getPipeTemplate,
   getRouteModuleTemplate,
   getServiceTemplate,
+  getTableHtml,
+  getTableTs,
 } from "./template";
+
+// 组件/模块等文件创建工厂
 
 export type ComponentType = "空" | "表单表格搜索组件" | "表格" | "表单";
 export interface ComponentOption {
@@ -120,13 +126,13 @@ class Component {
   scss!: string;
   name!: string;
   setHtmlTpl() {
-    this.html = getBaseHtmlTemplate(this.name);
+    this.html = getBaseHtml(this.name);
   }
   setScssTpl() {
     this.scss = "::ng-deep{}";
   }
   setTsTpl() {
-    this.ts = getBaseComponentTemplate(this.name as string);
+    this.ts = getBaseTs(this.name as string);
   }
   // 构建组件基本信息
   build() {
@@ -165,8 +171,12 @@ class FormComponent extends Component {
     return removeQuotesFromKeys(JSON.stringify(result));
   }
 
-  override setHtmlTpl() {}
-  override setTsTpl() {}
+  override setHtmlTpl() {
+    this.html=getFormHtml()
+  }
+  override setTsTpl() {
+    this.ts=getFormTs(this.name,this.buildSfData())
+  }
 }
 /**
  * 表格组件类
@@ -181,19 +191,34 @@ class TableComponent extends Component {
   buildStData() {
     if (!this.data.stSetting) return;
     let setting = newGetSetting(this.data.stSetting);
-    let result:ColumnAny = setting?.map((item) => {
-      const { title, widget, schemaEnum, key } = item;
-      if (widget === "buttons") {
-      }
-      return {
+    let result: ColumnAny = setting?.map((item,index) => {
+      const { title, key } = item;
+      let res:any={
         title: title,
         index: key,
       };
+      if(index===0){
+        // 默认固定 table 第一列
+        res.fixed= 'left'
+        res.width=100
+      }
+      return  res
     });
+    // 默认帮忙填写 table 操作项
+    result.push({
+      fixed: 'right',
+      width: 200,
+      title: '操作',
+      buttons: []
+    })
     return removeQuotesFromKeys(JSON.stringify(result));
   }
-  override setHtmlTpl() {}
-  override setTsTpl() {}
+  override setHtmlTpl() {
+    this.html=getTableHtml()
+  }
+  override setTsTpl() {
+    this.ts=getTableTs(this.name,this.buildStData())
+  }
 }
 /**
  * 表单表格组件类
@@ -214,10 +239,10 @@ class FormTableComponent extends Component {
   sfData!: string;
 
   override setHtmlTpl() {
-    this.html = getFormTableTemplate(this.data.isShowPageHeader);
+    this.html = getFormTableHtml(this.data.isShowPageHeader);
   }
   override setTsTpl() {
-    this.ts = getFormTableComponentTemplate(
+    this.ts = getFormTableTs(
       this.name,
       this.stData,
       this.stData
@@ -240,8 +265,8 @@ export class CreateComponentFactory extends FileFactory {
   private isAutoDeclaration?: string;
   private createComponentType?: ComponentType;
   private isShowPageHeader?: boolean;
-  private stSetting?:string;
-  private sfSetting?:string;
+  private stSetting?: string;
+  private sfSetting?: string;
 
   /**
    * @description 查找父级 module.ts 文件
