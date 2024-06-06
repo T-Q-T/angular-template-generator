@@ -244,7 +244,7 @@ class FormTableComponent extends Component {
   override setTsTpl() {
     this.ts = getFormTableTs(
       this.name,
-      this.stData,
+      this.sfData,
       this.stData
     );
   }

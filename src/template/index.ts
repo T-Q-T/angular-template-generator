@@ -50,8 +50,9 @@ export function getFormTableTs(
   return `import { Component, OnInit, ViewChild } from '@angular/core';
   import { SFSchema } from '@delon/form';
   import { ModalHelper } from '@delon/theme';
-  import { NzMessageService, NzModalService } from 'ng-zorro-antd';
-  ${columnData ? `import { STColumn, STComponent } from '@delon/abc';` : ""}
+  import { NzMessageService } from 'ng-zorro-antd/message';
+  import { NzModalService } from 'ng-zorro-antd/modal';
+  ${columnData ? `import { STColumn, STComponent } from '@delon/abc/st';` : ""}
 
     @Component({
       selector: '${name}',
@@ -68,7 +69,7 @@ export function getFormTableTs(
 
       ${
         columnData
-          ? `@ViewChild('st', { static: true }) st: STComponent;\n`
+          ? `@ViewChild('st', { static: true }) st!: STComponent;\n`
           : ""
       }
       ${columnData ? `url='';\n` : ""}
@@ -90,7 +91,8 @@ export function getFormTs(name: string, schemaData?: string) {
   return `import { Component, OnInit } from '@angular/core';
   import { SFSchema ,  SFUISchema} from '@delon/form';
   import { ModalHelper } from '@delon/theme';
-  import { NzMessageService, NzModalService } from 'ng-zorro-antd';
+  import { NzMessageService } from 'ng-zorro-antd/message';
+  import { NzModalService } from 'ng-zorro-antd/modal';
 
     @Component({
       selector: '${name}',
@@ -132,7 +134,8 @@ export function getTableTs(name: string, column?: string) {
   return `import { Component, OnInit } from '@angular/core';
   import { STChange, STColumn, STData, STReq, STRequestOptions, STRes } from '@delon/abc/st';
   import { ModalHelper } from '@delon/theme';
-  import { NzMessageService, NzModalService } from 'ng-zorro-antd';
+  import { NzMessageService } from 'ng-zorro-antd/message';
+  import { NzModalService } from 'ng-zorro-antd/modal';
 
     @Component({
       selector: '${name}',
