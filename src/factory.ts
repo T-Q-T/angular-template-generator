@@ -1,9 +1,10 @@
 import * as fs from "fs";
 import * as path from "path";
 import {
-  filterObjUndefinedProperty,
+  shallowFilterObjUndefinedProperty,
   firstLetterCamelCaseFormatter,
   removeQuotesFromKeys,
+  newGetSetting,
 } from "./utils";
 import {
   getBaseComponentTemplate,
@@ -21,14 +22,23 @@ export interface ComponentOption {
   isAutoDeclaration: string;
   createComponentType: ComponentType;
   isShowPageHeader: boolean;
-  stSetting: any[];
-  sfSetting: any[];
+  stSetting: string;
+  sfSetting: string;
 }
 type SchemaAny = any;
 
 type ColumnAny = any;
+
+type ComponentMap = { [key in ComponentType]: any };
+
+type ComponentClass =
+  | TableComponent
+  | Component
+  | FormComponent
+  | FormTableComponent;
+
 /**
- * @description 基本操作类
+ * @description 文件基本操作类
  */
 export class FileFactory {
   constructor(basePath: string, name: string) {
@@ -78,7 +88,145 @@ export class FileFactory {
 }
 
 /**
- * @description 组件工厂
+ * 派遣分发组件类
+ */
+class DispatchComponent {
+  constructor(type: ComponentType) {
+    this.type = type;
+  }
+  type: ComponentType;
+  map: ComponentMap = {
+    空: Component,
+    表单: FormComponent,
+    表格: TableComponent,
+    表单表格搜索组件: FormTableComponent,
+  };
+  get() {
+    return this.map[this.type as ComponentType];
+  }
+}
+
+/**
+ * @description 基本组件类
+ */
+class Component {
+  constructor(name: string, data: Partial<ComponentOption>) {
+    this.name = name;
+    this.data = data;
+  }
+  data!: Partial<ComponentOption>;
+  html!: string;
+  ts!: string;
+  scss!: string;
+  name!: string;
+  setHtmlTpl() {
+    this.html = getBaseHtmlTemplate(this.name);
+  }
+  setScssTpl() {
+    this.scss = "::ng-deep{}";
+  }
+  setTsTpl() {
+    this.ts = getBaseComponentTemplate(this.name as string);
+  }
+  // 构建组件基本信息
+  build() {
+    this.setHtmlTpl();
+    this.setScssTpl();
+    this.setTsTpl();
+    return this;
+  }
+}
+
+/**
+ * 表单组件类
+ */
+class FormComponent extends Component {
+  constructor(name: string, data: Partial<ComponentOption>) {
+    super(name, data);
+  }
+  /**
+   * @description 构建 schema 基本数据
+   * @returns
+   */
+  buildSfData() {
+    if (!this.data.sfSetting) return;
+    let setting = newGetSetting(this.data.sfSetting);
+    const result: SchemaAny = { properties: {} };
+    setting?.forEach((item, index) => {
+      const { title, widget, schemaEnum, key } = item;
+      const res: any = {
+        title,
+        enum: schemaEnum,
+        key,
+        ui: widget && { widget },
+      };
+      result.properties[item.key] = shallowFilterObjUndefinedProperty(res);
+    });
+    return removeQuotesFromKeys(JSON.stringify(result));
+  }
+
+  override setHtmlTpl() {}
+  override setTsTpl() {}
+}
+/**
+ * 表格组件类
+ */
+class TableComponent extends Component {
+  constructor(name: string, data: Partial<ComponentOption>) {
+    super(name, data);
+  }
+  /**
+   * @description 构建 column 基本数据
+   */
+  buildStData() {
+    if (!this.data.stSetting) return;
+    let setting = newGetSetting(this.data.stSetting);
+    let result:ColumnAny = setting?.map((item) => {
+      const { title, widget, schemaEnum, key } = item;
+      if (widget === "buttons") {
+      }
+      return {
+        title: title,
+        index: key,
+      };
+    });
+    return removeQuotesFromKeys(JSON.stringify(result));
+  }
+  override setHtmlTpl() {}
+  override setTsTpl() {}
+}
+/**
+ * 表单表格组件类
+ */
+class FormTableComponent extends Component {
+  constructor(name: string, data: Partial<ComponentOption>) {
+    super(name, data);
+    //TODO 继承属性,继承方式比较 low 待优化
+    this.stData = new TableComponent(name, data).buildStData.call(
+      this
+    ) as string;
+    this.sfData = new FormComponent(name, data).buildSfData.call(
+      this
+    ) as string;
+  }
+
+  stData!: string;
+  sfData!: string;
+
+  override setHtmlTpl() {
+    this.html = getFormTableTemplate(this.data.isShowPageHeader);
+  }
+  override setTsTpl() {
+    this.ts = getFormTableComponentTemplate(
+      this.name,
+      this.stData,
+      this.stData
+    );
+  }
+}
+
+/**
+ * @description 组件构造工厂
  */
 export class CreateComponentFactory extends FileFactory {
   constructor(basePath: string, name: string, opt: Partial<ComponentOption>) {
@@ -89,22 +237,18 @@ export class CreateComponentFactory extends FileFactory {
     this.sfSetting = opt.sfSetting;
     this.stSetting = opt.stSetting;
   }
-
-  isAutoDeclaration?: string;
-
-  createComponentType?: ComponentType;
-
-  isShowPageHeader?: boolean;
-
-  stSetting?: any[];
-  sfSetting?: any[];
+  private isAutoDeclaration?: string;
+  private createComponentType?: ComponentType;
+  private isShowPageHeader?: boolean;
+  private stSetting?:string;
+  private sfSetting?:string;
 
   /**
    * @description 查找父级 module.ts 文件
    * @param folderPath
    * @returns
    */
-  async findModuleFile(folderPath: string): Promise<string | null> {
+  private async findModuleFile(folderPath: string): Promise<string | null> {
     let currentPath = folderPath;
 
     // 如果传入的是文件路径，则转换为其所在的文件夹路径
@@ -133,7 +277,7 @@ export class CreateComponentFactory extends FileFactory {
   /**
    * @description 更新最近父级模块声明
    */
-  async updateParentModuleDeclaration() {
+  private async updateParentModuleDeclaration() {
     try {
       const basePath = path.join(this.basePath, `${this.name}.component.ts`);
       const parentModulePath = await this.findModuleFile(basePath);
@@ -161,76 +305,18 @@ export class CreateComponentFactory extends FileFactory {
    * @param name
    * @param modulePath
    */
-  createScssTpl() {
+  private createScssTpl(scss: string) {
     this.createFile(
       path.join(this.basePath, this.name, `${this.name}.component.scss`),
-      "::ng-deep{}"
+      scss
     );
   }
 
-  createComponentFolder() {
+  /**
+   * @description 创建组件文件夹
+   */
+  private createComponentFolder() {
     this.createFold(path.join(this.basePath, this.name));
-  }
-
-  /**
-   * @description 构建 schema
-   * @returns
-   */
-  buildSfData() {
-    if (!this.sfSetting) return;
-    const result: SchemaAny = { properties: {} };
-    this.sfSetting?.forEach((item, index) => {
-      const { title, widget, schemaEnum, key } = item;
-      const res: any = { title, enum: schemaEnum, key };
-      if (widget) res.ui = { widget };
-      result.properties[item.key] = filterObjUndefinedProperty(res);
-    });
-    return removeQuotesFromKeys(JSON.stringify(result));
-  }
-
-  /**
-   * @description 构建 column
-   */
-  buildStData() {
-    if (!this.stSetting) return;
-    let result = this.stSetting?.map((item) => {
-      const { title, widget, schemaEnum, key } = item;
-      if (widget === "buttons") {
-      }
-      return {
-        title: title,
-        index: key,
-      };
-    });
-    return removeQuotesFromKeys(JSON.stringify(result));
-  }
-
-  /**
-   * @description 获取组件的 html 模版
-   * @returns
-   */
-  getHtmlTpl() {
-    if (this.createComponentType === "空")
-      return getBaseHtmlTemplate(this.name);
-    if (this.createComponentType === "表单表格搜索组件")
-      return getFormTableTemplate(this.isShowPageHeader);
-    return "";
-  }
-
-  /**
-   * @description 获取组件内容模版
-   * @returns
-   */
-  getComponentTpl() {
-    if (this.createComponentType === "空")
-      return getBaseComponentTemplate(this.name as string);
-    if (this.createComponentType === "表单表格搜索组件")
-      return getFormTableComponentTemplate(
-        this.name,
-        this.buildSfData(),
-        this.buildStData()
-      );
-    return "";
   }
 
   /**
@@ -238,10 +324,10 @@ export class CreateComponentFactory extends FileFactory {
    * @param name
    * @param modulePath
    */
-  createHtmlTpl() {
+  private createHtmlTpl(html: string) {
     this.createFile(
       path.join(this.basePath, this.name, `${this.name}.component.html`),
-      this.getHtmlTpl()
+      html
     );
   }
 
@@ -250,27 +336,47 @@ export class CreateComponentFactory extends FileFactory {
    * @param name
    * @param modulePath
    */
-  createComponentTpl() {
-    const componentContent = this.getComponentTpl();
+  private createTsTpl(ts: string) {
     this.createFile(
       path.join(this.basePath, this.name, `${this.name}.component.ts`),
-      componentContent
+      ts
     );
+  }
+
+  /**
+   * @description 创建组件文件
+   * @param component
+   */
+  public creteComponent(component: ComponentClass) {
+    this.createComponentFolder();
+    this.createHtmlTpl(component.html);
+    this.createScssTpl(component.scss);
+    this.createTsTpl(component.ts);
     if (this.isAutoDeclaration === "是") {
       this.updateParentModuleDeclaration();
     }
   }
 
-  create() {
-    this.createComponentFolder();
-    this.createHtmlTpl();
-    this.createComponentTpl();
-    this.createScssTpl();
+  /**
+   * 入口
+   */
+  public build() {
+    const componentClass = new DispatchComponent(
+      this.createComponentType as ComponentType
+    ).get();
+    const componentInstance = new componentClass(this.name, {
+      isAutoDeclaration: this.isAutoDeclaration,
+      createComponentType: this.createComponentType,
+      isShowPageHeader: this.isShowPageHeader,
+      stSetting: this.stSetting,
+      sfSetting: this.sfSetting,
+    }).build();
+    this.creteComponent(componentInstance);
   }
 }
 
 /**
- * @description 模块工厂
+ * @description 模块构造工厂
  */
 export class CreateModuleFactory extends CreateComponentFactory {
   constructor(basePath: string, name: string, opt: any) {
@@ -374,7 +480,7 @@ export class CreateModuleFactory extends CreateComponentFactory {
     );
   }
 
-  override create() {
+  override build() {
     this.createBaseFolds(this.basePath);
     this.createBaseFiles(this.basePath);
     this.createPipeTpl(this.name, this.basePath);
@@ -383,10 +489,10 @@ export class CreateModuleFactory extends CreateComponentFactory {
       this.basePath,
       this.isCreateRouteModule === "是"
     );
-    this.createHtmlTpl();
-    this.createComponentTpl();
+    const componentClass = new DispatchComponent("空").get();
+    const componentInstance = new componentClass(this.name, {}).build();
+    this.creteComponent(componentInstance);
     this.createServiceTpl(this.name, this.basePath);
-    this.createScssTpl();
     if (this.isCreateRouteModule === "是") {
       this.createRouteModuleTpl(this.name, this.basePath);
     }

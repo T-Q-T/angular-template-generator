@@ -6,7 +6,7 @@ import {
 } from "../factory";
 import * as path from "path";
 import { getSetting, newGetSetting } from "../utils";
-import { FORM_TIP, TABLE_TIP } from "../const";
+import { COMPONENTS, CREATE_TYPE, FORM_TIP, TABLE_TIP } from "../const";
 
 // vsc 的命令行所有操作均放到这里,命令行逻辑发生的地方
 export function commandControl(context: vscode.ExtensionContext) {
@@ -17,7 +17,7 @@ export function commandControl(context: vscode.ExtensionContext) {
       let targetFolder: string = getFilePath(resource);
       createPath = targetFolder;
       const fileType = await callVscSelect(
-        ["Module", "Component"],
+        CREATE_TYPE,
         "选择创建的类型"
       );
 
@@ -26,12 +26,12 @@ export function commandControl(context: vscode.ExtensionContext) {
       }
       switch (fileType) {
         case "Component": {
-          createComponent(targetFolder);
+          createComponentFlow(targetFolder);
           formatterComponent(createPath);
           break;
         }
         case "Module": {
-          createModule(targetFolder);
+          createModuleFlow(targetFolder);
           break;
         }
       }
@@ -57,11 +57,11 @@ function formatterComponent(createPath: string) {
 }
 
 /**
- * @description 创建模块
+ * @description 创建模块流程
  * @param targetFolder 文件基本路径
  * @returns
  */
-async function createModule(targetFolder: string) {
+async function createModuleFlow(targetFolder: string) {
   const name = await callVscInput("请输入模块命名");
   if (!name) {
     return;
@@ -75,22 +75,22 @@ async function createModule(targetFolder: string) {
   }
   // 模块路径
   const foldPath = path.join(targetFolder, name as string);
-  new CreateModuleFactory(foldPath, name, { isCreateRouteModule }).create();
+  new CreateModuleFactory(foldPath, name, { isCreateRouteModule }).build();
   vscode.window.showInformationMessage(`模块 ${name} 成功创建`);
 }
 
 /**
- * @description 创建组件
+ * @description 创建组件流程
  * @param targetFolder
  * @returns
  */
-async function createComponent(targetFolder: string) {
+async function createComponentFlow(targetFolder: string) {
   const name = await callVscInput("请输入组件命名");
   if (!name) {
     return;
   }
   const createComponentType = (await callVscSelect(
-    ["空", "表单表格搜索组件", "表格", "表单"],
+    COMPONENTS,
     "创建组件类型"
   )) as ComponentType;
   let sfSetting, stSetting, isShowPageHeader;
@@ -126,8 +126,6 @@ async function createComponent(targetFolder: string) {
       break;
     }
   }
-  sfSetting = newGetSetting(sfSetting || "");
-  stSetting = newGetSetting(stSetting || "");
   const isAutoDeclaration = await callVscSelect(
     ["否", "是"],
     "是否自动声明至上层模块"
@@ -135,14 +133,14 @@ async function createComponent(targetFolder: string) {
   if (!isAutoDeclaration) {
     return;
   }
-  // 模块路径
+  // 组件路径
   new CreateComponentFactory(targetFolder, name, {
     isAutoDeclaration,
     createComponentType,
     isShowPageHeader: isShowPageHeader === "是",
     sfSetting,
     stSetting,
-  }).create();
+  }).build();
   vscode.window.showInformationMessage(`模块 ${name} 成功创建`);
 }
 

@@ -5,8 +5,7 @@ export function getBaseHtmlTemplate(name: string) {
 }
 
 export function getFormTableTemplate(isCreatePage: boolean = false) {
-  return `${isCreatePage ? `<page-header></page-header>` : ''}
-  <nz-card>
+  return `${isCreatePage ? `<page-header></page-header>\n` : ''}<nz-card>
   <sf mode="search" [schema]="schema" (formSubmit)="st.reset($event)" (formReset)="st.reset($event)"></sf>
   <st #st [data]="url" [columns]="columns">
   </st>

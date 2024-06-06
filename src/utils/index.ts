@@ -86,14 +86,10 @@ export function removeQuotesFromKeys(jsonStr: string) {
 }
 
 /**
- * @description 将对象的 undefined 属性的 key 删除
+ * @description 将对象的 undefined 属性的 key 浅删除
  */
-export function filterObjUndefinedProperty(obj: any) {
+export function shallowFilterObjUndefinedProperty(obj: any) {
   for (const key in obj) {
-    if (obj[key] instanceof Object) {
-      filterObjUndefinedProperty(obj[key]);
-      continue;
-    }
     if (obj[key] === undefined) {
       delete obj[key];
     }
