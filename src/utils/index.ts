@@ -59,7 +59,7 @@ export function newGetSetting(str: string) {
   const dataItem = str.split(colonReg);
   return dataItem.map((item) => {
     let [title, key, widget, ...schemaEnum] = item?.trim().split(commaReg);
-    if (schemaEnum) {
+    if (schemaEnum&&schemaEnum.length) {
       schemaEnum = schemaEnum.join(",").split(orReg);
       (schemaEnum as any) = schemaEnum.map((item, index) => {
         const [label, value] = item?.trim().split(commaReg);

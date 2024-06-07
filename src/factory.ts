@@ -162,8 +162,7 @@ class FormComponent extends Component {
       const { title, widget, schemaEnum, key } = item;
       const res: any = {
         title,
-        enum: schemaEnum,
-        key,
+        enum: schemaEnum.length?schemaEnum:undefined,
         ui: widget && { widget },
       };
       result.properties[item.key] = shallowFilterObjUndefinedProperty(res);
