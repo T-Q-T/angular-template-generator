@@ -162,7 +162,7 @@ class FormComponent extends Component {
       const { title, widget, schemaEnum, key } = item;
       const res: any = {
         title,
-        enum: schemaEnum.length?schemaEnum:undefined,
+        enum: schemaEnum.length ? schemaEnum : undefined,
         ui: widget && { widget },
       };
       result.properties[item.key] = shallowFilterObjUndefinedProperty(res);
@@ -171,10 +171,10 @@ class FormComponent extends Component {
   }
 
   override setHtmlTpl() {
-    this.html=getFormHtml()
+    this.html = getFormHtml()
   }
   override setTsTpl() {
-    this.ts=getFormTs(this.name,this.buildSfData())
+    this.ts = getFormTs(this.name, this.buildSfData())
   }
 }
 /**
@@ -190,18 +190,18 @@ class TableComponent extends Component {
   buildStData() {
     if (!this.data.stSetting) return;
     let setting = newGetSetting(this.data.stSetting);
-    let result: ColumnAny = setting?.map((item,index) => {
+    let result: ColumnAny = setting?.map((item, index) => {
       const { title, key } = item;
-      let res:any={
+      let res: any = {
         title: title,
         index: key,
       };
-      if(index===0){
+      if (index === 0) {
         // 默认固定 table 第一列
-        res.fixed= 'left'
-        res.width=100
+        res.fixed = 'left'
+        res.width = 100
       }
-      return  res
+      return res
     });
     // 默认帮忙填写 table 操作项
     result.push({
@@ -213,10 +213,10 @@ class TableComponent extends Component {
     return removeQuotesFromKeys(JSON.stringify(result));
   }
   override setHtmlTpl() {
-    this.html=getTableHtml()
+    this.html = getTableHtml()
   }
   override setTsTpl() {
-    this.ts=getTableTs(this.name,this.buildStData())
+    this.ts = getTableTs(this.name, this.buildStData())
   }
 }
 /**

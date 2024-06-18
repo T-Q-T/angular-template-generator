@@ -96,3 +96,21 @@ export function shallowFilterObjUndefinedProperty(obj: any) {
   }
   return obj;
 }
+
+
+
+
+/**
+ * @description  给代码增加 viewChild 和 templateRef 声明
+ * @param importStatement 
+ * @returns 
+ */
+export function addTemplateRefAndViewChild(importStatement:string) {
+    const regex = /import\s+\{([^}]+)\}\s+from\s+'@angular\/core';/;
+    return importStatement.replace(regex, (match, group) => {
+        const imports = group.split(',').map((item:string) => item.trim());
+            imports.push('TemplateRef');
+            imports.push('ViewChild');
+        return `import { ${imports.join(', ')} } from '@angular/core';`;
+    });
+}

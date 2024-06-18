@@ -1,4 +1,5 @@
 import { firstLetterCamelCaseFormatter } from "../utils";
+// -------------------------------------------------- 文件操作栏模版 --------------------------------------------------
 
 export function getBaseHtml(name: string) {
   return `${name} module create!`;
@@ -67,11 +68,10 @@ export function getFormTableTs(
         private modalService: NzModalService
       ) { }
 
-      ${
-        columnData
-          ? `@ViewChild('st', { static: true }) st!: STComponent;\n`
-          : ""
-      }
+      ${columnData
+      ? `@ViewChild('st', { static: true }) st!: STComponent;\n`
+      : ""
+    }
       ${columnData ? `url='';\n` : ""}
       ${schemaData ? `schema: SFSchema=${schemaData};\n` : ""}
       ${columnData ? `columns: STColumn[]=${columnData};\n` : ""}
@@ -260,4 +260,10 @@ export function getServiceTemplate(name: string) {
     
     }
     `;
+}
+
+// ------------------------------------------------- 代码块操作栏模版 -------------------------------------------------
+
+export function getHtmlTemplate(content: string, tplKey: string) {
+  return content + `\n<ng-template #${tplKey}>\n</ng-template>`
 }

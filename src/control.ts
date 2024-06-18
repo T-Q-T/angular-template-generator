@@ -3,19 +3,70 @@ import {
   ComponentType,
   CreateComponentFactory,
   CreateModuleFactory,
-} from "./factory";
+} from "./file-factory";
 import * as path from "path";
-import { getSetting, newGetSetting } from "./utils";
 import { COMPONENTS, CREATE_TYPE, FORM_TIP, TABLE_TIP } from "./const";
+import { ConfirmModal } from "./code-factory";
 
 // vsc 的命令行所有操作均放到这里,命令行逻辑控制
 export function commandControl(context: vscode.ExtensionContext) {
-  let createPath = "";
-  let disposable = vscode.commands.registerCommand(
+
+  // 注册文件树右键菜单命令
+  registerVscFoldMenu().forEach((item) => {
+    context.subscriptions.push(item)
+  })
+
+  // 注册代码块右键菜单命令
+  registerVscCodeMenu().forEach((item) => {
+    context.subscriptions.push(item)
+  })
+}
+
+/**
+ * @description 这里注册 vsc 代码块右键菜单命令
+ * @returns 
+ */
+function registerVscCodeMenu() {
+  const createConfirmModal = vscode.commands.registerCommand('create.confirmModal', async (resource: vscode.Uri) => {
+    let targetFolder: string = getFilePath(resource);
+    createConfirmModalTpl(targetFolder)
+    callVscModal('已成功创建弹窗模版');
+  })
+  return [
+    createConfirmModal
+  ]
+
+}
+
+
+/**
+ * @description 创建确认弹窗
+ */
+async function createConfirmModalTpl(path: string) {
+  const isCustom = await callVscSelect(
+    ["否", "是"],
+    "是否自定义弹窗模版"
+  );
+  if (!isCustom) {
+    return;
+  }
+  const templateKey= await callVscInput("请输入模版键名")
+  if (!templateKey) {
+    return
+  }
+  new ConfirmModal(path, '',isCustom, templateKey).build()
+}
+
+
+/**
+ * @description 这里注册 vsc 文件菜单命令
+ * @returns 
+ */
+function registerVscFoldMenu() {
+  const vscCreateFile = vscode.commands.registerCommand(
     "extension.createFile",
     async (resource: vscode.Uri) => {
       let targetFolder: string = getFilePath(resource);
-      createPath = targetFolder;
       const fileType = await callVscSelect(CREATE_TYPE, "选择创建的类型");
 
       if (!fileType) {
@@ -24,7 +75,7 @@ export function commandControl(context: vscode.ExtensionContext) {
       switch (fileType) {
         case "Component": {
           createComponentFlow(targetFolder);
-          formatterComponent(createPath);
+          formatterComponent(targetFolder);
           break;
         }
         case "Module": {
@@ -34,7 +85,9 @@ export function commandControl(context: vscode.ExtensionContext) {
       }
     }
   );
-  context.subscriptions.push(disposable);
+  return [
+    vscCreateFile
+  ]
 }
 
 /**

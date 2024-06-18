@@ -17,6 +17,10 @@
       {
         "command": "extension.createFile",
         "title": "Create angular File"
+      },
+      {
+        "command": "create.confirmModal",
+        "title": "创建简易确认弹窗"
       }
     ],
     "menus": {
@@ -33,8 +37,24 @@
           "group": "navigation",
           "when": "resourceScheme == 'file'"
         }
-      ]
-    }
+      ],
+      "editor/context": [
+        {
+          "submenu": "create.template",
+          "when": "editorLangId == 'javascript'||editorLangId == 'typescript'",
+          "group": "navigation"
+        }
+      ],
+      "create.template":[{
+        "command": "create.confirmModal"
+      }]
+    },
+    "submenus": [
+      {
+        "id": "create.template",
+        "label": "创建常见模版代码"
+      }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
