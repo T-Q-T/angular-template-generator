@@ -20,7 +20,7 @@
       },
       {
         "command": "create.confirmModal",
-        "title": "创建简易确认弹窗"
+        "title": "创建确认弹窗"
       }
     ],
     "menus": {

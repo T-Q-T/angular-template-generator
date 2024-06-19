@@ -30,7 +30,6 @@ function registerVscCodeMenu() {
   const createConfirmModal = vscode.commands.registerCommand('create.confirmModal', async (resource: vscode.Uri) => {
     let targetFolder: string = getFilePath(resource);
     createConfirmModalTpl(targetFolder)
-    callVscModal('已成功创建弹窗模版');
   })
   return [
     createConfirmModal
@@ -43,6 +42,7 @@ function registerVscCodeMenu() {
  * @description 创建确认弹窗
  */
 async function createConfirmModalTpl(path: string) {
+  let templateKey = ''
   const isCustom = await callVscSelect(
     ["否", "是"],
     "是否自定义弹窗模版"
@@ -50,11 +50,26 @@ async function createConfirmModalTpl(path: string) {
   if (!isCustom) {
     return;
   }
-  const templateKey= await callVscInput("请输入模版键名")
-  if (!templateKey) {
-    return
+  if (isCustom === "是") {
+    templateKey = await callVscInput("请输入模版键名")
   }
-  new ConfirmModal(path, '',isCustom, templateKey).build()
+  if (isCustom === "是" && templateKey === '') return
+
+  const confirmModalInstance = new ConfirmModal(path, '', isCustom, templateKey)
+  const { activeTextEditor } = vscode.window;
+  if (activeTextEditor) {
+    activeTextEditor.edit((editBuilder) => {
+      editBuilder.replace(activeTextEditor.selection, confirmModalInstance.getModalTemplate());
+    }).then(async() => {
+      // 这里不知道为啥,需要重新打开文件保存后才能再次写入
+      const document = await vscode.workspace.openTextDocument(path);
+      await vscode.window.showTextDocument(document);
+      await document.save();
+      confirmModalInstance.build()
+      formatterComponent(path);
+      callVscModal('已成功创建弹窗模版');
+    });
+  }
 }
 
 

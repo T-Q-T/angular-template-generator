@@ -108,9 +108,31 @@ export function shallowFilterObjUndefinedProperty(obj: any) {
 export function addTemplateRefAndViewChild(importStatement:string) {
     const regex = /import\s+\{([^}]+)\}\s+from\s+'@angular\/core';/;
     return importStatement.replace(regex, (match, group) => {
-        const imports = group.split(',').map((item:string) => item.trim());
+        const imports = group.split(',').map((item:string) => item.trim()).filter((item:string)=>item);
             imports.push('TemplateRef');
             imports.push('ViewChild');
         return `import { ${imports.join(', ')} } from '@angular/core';`;
     });
+}
+
+/**
+ * @description 给代码 constructor 增加内容
+ * @param input 文件内容
+ * @param content 待增加的内容
+ * @returns 
+ */
+export function addNzModalServiceToConstructor(input:string,content:string) {
+  const regex = /constructor\s*\(([^)]*)\)\s*\{/;
+  return input.replace(regex, (match, params) => {
+      const paramList = params.split('\n').map((param:string) => param.trim());
+      paramList.push(content);
+      const newParams = paramList.filter((item:string)=>item).join(',\n  ');
+
+      return `constructor(\n  ${newParams},\n) {`;
+  });
+}
+
+export function addTemplateDeclaration(input:string,content:string) {
+  const regex = /constructor\s*\([\s\S]*?\)\s*\{\s*\}/;
+  return input.replace(regex, (match) => `${match}\n${content}`);
 }

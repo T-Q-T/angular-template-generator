@@ -265,5 +265,18 @@ export function getServiceTemplate(name: string) {
 // ------------------------------------------------- 代码块操作栏模版 -------------------------------------------------
 
 export function getHtmlTemplate(content: string, tplKey: string) {
+  if (!tplKey) return content
   return content + `\n<ng-template #${tplKey}>\n</ng-template>`
+}
+
+
+export function getConfirmTemplate(tplKey: string) {
+  return `this.nzModalService.confirm({
+    nzTitle: 'title',
+    nzContent:${tplKey ? `this.${tplKey}` : '"modelContent"'},
+    nzOnOk: () => {
+      console.log('ok')
+    },
+    nzWidth: '450px',
+  });`
 }
