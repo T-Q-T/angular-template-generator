@@ -3,9 +3,13 @@
   "displayName": "angular-template-generate",
   "description": "你的 angular 创建模版帕鲁",
   "version": "0.0.1",
-  "icon": "palu.jpeg",
+  "icon": "src/resource/palu.jpeg",
   "engines": {
     "vscode": "^1.89.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tiantiankin/angular-template-generator.git"
   },
   "categories": [
     "Other"
@@ -21,6 +25,10 @@
       {
         "command": "create.confirmModal",
         "title": "创建确认弹窗"
+      },
+      {
+        "command": "create.staticModal",
+        "title": "创建 delon 静态组件弹窗"
       }
     ],
     "menus": {
@@ -47,6 +55,8 @@
       ],
       "create.template":[{
         "command": "create.confirmModal"
+      },{
+        "command": "create.staticModal"
       }]
     },
     "submenus": [

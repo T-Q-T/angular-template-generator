@@ -184,7 +184,8 @@ export function getTableTs(name: string, column?: string) {
  */
 export function getModuleTemplate(
   name: string,
-  isCreateRouteModule: boolean = false
+  isCreateRouteModule: boolean = false,
+  isNeedShareModule: boolean = false
 ) {
   const CamelCaseName = firstLetterCamelCaseFormatter(name as string);
 
@@ -192,16 +193,16 @@ export function getModuleTemplate(
     ? `import { ${CamelCaseName}RouteModule } from './${name}.route';`
     : "";
   const routeModuleStatement = isCreateRouteModule
-    ? `${CamelCaseName}RouteModule,`
+    ? `${CamelCaseName}RouteModule`
     : "";
   return `import { NgModule } from '@angular/core';
     import { CommonModule } from '@angular/common';
     import { ${CamelCaseName}Component } from './${name}.component';
-    import { SharedModule } from '@shared';
+    ${isNeedShareModule ? "import { SharedModule } from '@shared';" : ""}
     ${routeImportStatement}
   
     @NgModule({
-      imports: [CommonModule,${routeModuleStatement}SharedModule],
+      imports: [CommonModule,${routeModuleStatement}${isNeedShareModule ? ",SharedModule" : ""}],
       declarations: [${CamelCaseName}Component]
     })
     export class ${CamelCaseName}Module { }
@@ -265,10 +266,9 @@ export function getServiceTemplate(name: string) {
 // ------------------------------------------------- 代码块操作栏模版 -------------------------------------------------
 
 export function getHtmlTemplate(content: string, tplKey: string) {
-  if (!tplKey) return content
-  return content + `\n<ng-template #${tplKey}>\n</ng-template>`
+  if (!tplKey) return content;
+  return content + `\n<ng-template #${tplKey}>\n</ng-template>`;
 }
-
 
 export function getConfirmTemplate(tplKey: string) {
   return `this.nzModalService.confirm({
@@ -278,5 +278,16 @@ export function getConfirmTemplate(tplKey: string) {
       console.log('ok')
     },
     nzWidth: '450px',
-  });`
+  });`;
+}
+
+
+export function getStaticTemplate(componentName: string) {
+  const firstWordReg=/^[a-z]/
+  const newComponentName=componentName.replace(firstWordReg,componentName[0].toUpperCase())
+  return `this.modal
+  .createStatic(${newComponentName}Component, {}, { size: 'md' })
+  .subscribe(res => {
+    console.log(res)
+  });`;
 }

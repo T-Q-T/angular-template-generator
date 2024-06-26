@@ -121,7 +121,7 @@ export function addTemplateRefAndViewChild(importStatement:string) {
  * @param content 待增加的内容
  * @returns 
  */
-export function addNzModalServiceToConstructor(input:string,content:string) {
+export function addServiceToConstructor(input:string,content:string) {
   const regex = /constructor\s*\(([^)]*)\)\s*\{/;
   return input.replace(regex, (match, params) => {
       const paramList = params.split('\n').map((param:string) => param.trim());

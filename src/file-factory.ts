@@ -24,6 +24,7 @@ import {
 // 组件/模块等文件创建工厂
 
 export type ComponentType = "空" | "表单表格搜索组件" | "表格" | "表单";
+export type Source = "module" | "component";
 export interface ComponentOption {
   isAutoDeclaration: string;
   createComponentType: ComponentType;
@@ -36,6 +37,8 @@ type SchemaAny = any;
 type ColumnAny = any;
 
 type ComponentMap = { [key in ComponentType]: any };
+
+export type ModuleOpt = any;
 
 type ComponentClass =
   | TableComponent
@@ -65,8 +68,6 @@ export class FileFactory {
       console.error(err);
     }
   }
-
-
 
   /**
    * @description 创建模块文件夹
@@ -173,10 +174,10 @@ class FormComponent extends Component {
   }
 
   override setHtmlTpl() {
-    this.html = getFormHtml()
+    this.html = getFormHtml();
   }
   override setTsTpl() {
-    this.ts = getFormTs(this.name, this.buildSfData())
+    this.ts = getFormTs(this.name, this.buildSfData());
   }
 }
 /**
@@ -200,25 +201,25 @@ class TableComponent extends Component {
       };
       if (index === 0) {
         // 默认固定 table 第一列
-        res.fixed = 'left'
-        res.width = 100
+        res.fixed = "left";
+        res.width = 100;
       }
-      return res
+      return res;
     });
     // 默认帮忙填写 table 操作项
     result.push({
-      fixed: 'right',
+      fixed: "right",
       width: 200,
-      title: '操作',
-      buttons: []
-    })
+      title: "操作",
+      buttons: [],
+    });
     return removeQuotesFromKeys(JSON.stringify(result));
   }
   override setHtmlTpl() {
-    this.html = getTableHtml()
+    this.html = getTableHtml();
   }
   override setTsTpl() {
-    this.ts = getTableTs(this.name, this.buildStData())
+    this.ts = getTableTs(this.name, this.buildStData());
   }
 }
 /**
@@ -243,11 +244,7 @@ class FormTableComponent extends Component {
     this.html = getFormTableHtml(this.data.isShowPageHeader);
   }
   override setTsTpl() {
-    this.ts = getFormTableTs(
-      this.name,
-      this.sfData,
-      this.stData
-    );
+    this.ts = getFormTableTs(this.name, this.sfData, this.stData);
   }
 }
 
@@ -331,9 +328,13 @@ export class CreateComponentFactory extends FileFactory {
    * @param name
    * @param modulePath
    */
-  private createScssTpl(scss: string) {
+  private createScssTpl(scss: string, source: Source) {
     this.createFile(
-      path.join(this.basePath, this.name, `${this.name}.component.scss`),
+      path.join(
+        this.basePath,
+        source === "component" ? this.name : "",
+        `${this.name}.component.scss`
+      ),
       scss
     );
   }
@@ -350,9 +351,13 @@ export class CreateComponentFactory extends FileFactory {
    * @param name
    * @param modulePath
    */
-  private createHtmlTpl(html: string) {
+  private createHtmlTpl(html: string, source: Source = "component") {
     this.createFile(
-      path.join(this.basePath, this.name, `${this.name}.component.html`),
+      path.join(
+        this.basePath,
+        source === "component" ? this.name : "",
+        `${this.name}.component.html`
+      ),
       html
     );
   }
@@ -362,9 +367,13 @@ export class CreateComponentFactory extends FileFactory {
    * @param name
    * @param modulePath
    */
-  private createTsTpl(ts: string) {
+  private createTsTpl(ts: string, source: Source = "component") {
     this.createFile(
-      path.join(this.basePath, this.name, `${this.name}.component.ts`),
+      path.join(
+        this.basePath,
+        source === "component" ? this.name : "",
+        `${this.name}.component.ts`
+      ),
       ts
     );
   }
@@ -373,11 +382,14 @@ export class CreateComponentFactory extends FileFactory {
    * @description 创建组件文件
    * @param component
    */
-  public creteComponent(component: ComponentClass) {
-    this.createComponentFolder();
-    this.createHtmlTpl(component.html);
-    this.createScssTpl(component.scss);
-    this.createTsTpl(component.ts);
+  public creteComponent(
+    component: ComponentClass,
+    source: Source = "component"
+  ) {
+    if (source !== "module") this.createComponentFolder();
+    this.createHtmlTpl(component.html, source);
+    this.createScssTpl(component.scss, source);
+    this.createTsTpl(component.ts, source);
     if (this.isAutoDeclaration === "是") {
       this.updateParentModuleDeclaration();
     }
@@ -408,7 +420,10 @@ export class CreateModuleFactory extends CreateComponentFactory {
   constructor(basePath: string, name: string, opt: any) {
     super(basePath, name, opt);
     this.isCreateRouteModule = opt.isCreateRouteModule;
+    this.isNeedShareModule = opt.isNeedShareModule;
   }
+
+  isNeedShareModule!: string;
 
   isCreateRouteModule!: string;
   /**
@@ -470,14 +485,11 @@ export class CreateModuleFactory extends CreateComponentFactory {
    * @param name
    * @param modulePath
    */
-  createModuleTpl(
-    name: string,
-    modulePath: string,
-    isCreateRouteModule: boolean = false
-  ) {
+  createModuleTpl(name: string, modulePath: string, opt: ModuleOpt) {
     const moduleContent = getModuleTemplate(
       name as string,
-      isCreateRouteModule
+      opt.isCreateRouteModule,
+      opt.isNeedShareModule
     );
     this.createFile(
       path.join(modulePath, `${name}.component.module.ts`),
@@ -510,14 +522,13 @@ export class CreateModuleFactory extends CreateComponentFactory {
     this.createBaseFolds(this.basePath);
     this.createBaseFiles(this.basePath);
     this.createPipeTpl(this.name, this.basePath);
-    this.createModuleTpl(
-      this.name,
-      this.basePath,
-      this.isCreateRouteModule === "是"
-    );
+    this.createModuleTpl(this.name, this.basePath, {
+      isCreateRouteModule: this.isCreateRouteModule === "是",
+      isNeedShareModule: this.isNeedShareModule === "是",
+    });
     const componentClass = new DispatchComponent("空").get();
     const componentInstance = new componentClass(this.name, {}).build();
-    this.creteComponent(componentInstance);
+    this.creteComponent(componentInstance, "module");
     this.createServiceTpl(this.name, this.basePath);
     if (this.isCreateRouteModule === "是") {
       this.createRouteModuleTpl(this.name, this.basePath);

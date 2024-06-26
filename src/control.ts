@@ -6,76 +6,46 @@ import {
 } from "./file-factory";
 import * as path from "path";
 import { COMPONENTS, CREATE_TYPE, FORM_TIP, TABLE_TIP } from "./const";
-import { ConfirmModal } from "./code-factory";
+import { ConfirmModal, StaticModal } from "./code-factory";
 
 // vsc 的命令行所有操作均放到这里,命令行逻辑控制
 export function commandControl(context: vscode.ExtensionContext) {
-
   // 注册文件树右键菜单命令
   registerVscFoldMenu().forEach((item) => {
-    context.subscriptions.push(item)
-  })
+    context.subscriptions.push(item);
+  });
 
   // 注册代码块右键菜单命令
   registerVscCodeMenu().forEach((item) => {
-    context.subscriptions.push(item)
-  })
+    context.subscriptions.push(item);
+  });
 }
 
 /**
  * @description 这里注册 vsc 代码块右键菜单命令
- * @returns 
+ * @returns
  */
 function registerVscCodeMenu() {
-  const createConfirmModal = vscode.commands.registerCommand('create.confirmModal', async (resource: vscode.Uri) => {
-    let targetFolder: string = getFilePath(resource);
-    createConfirmModalTpl(targetFolder)
-  })
-  return [
-    createConfirmModal
-  ]
-
-}
-
-
-/**
- * @description 创建确认弹窗
- */
-async function createConfirmModalTpl(path: string) {
-  let templateKey = ''
-  const isCustom = await callVscSelect(
-    ["否", "是"],
-    "是否自定义弹窗模版"
+  const createConfirmModal = vscode.commands.registerCommand(
+    "create.confirmModal",
+    async (resource: vscode.Uri) => {
+      let targetFolder: string = getFilePath(resource);
+      createConfirmModalTpl(targetFolder);
+    }
   );
-  if (!isCustom) {
-    return;
-  }
-  if (isCustom === "是") {
-    templateKey = await callVscInput("请输入模版键名")
-  }
-  if (isCustom === "是" && templateKey === '') return
-
-  const confirmModalInstance = new ConfirmModal(path, '', isCustom, templateKey)
-  const { activeTextEditor } = vscode.window;
-  if (activeTextEditor) {
-    activeTextEditor.edit((editBuilder) => {
-      editBuilder.replace(activeTextEditor.selection, confirmModalInstance.getModalTemplate());
-    }).then(async() => {
-      // 这里不知道为啥,需要重新打开文件保存后才能再次写入
-      const document = await vscode.workspace.openTextDocument(path);
-      await vscode.window.showTextDocument(document);
-      await document.save();
-      confirmModalInstance.build()
-      formatterComponent(path);
-      callVscModal('已成功创建弹窗模版');
-    });
-  }
+  const staticModal = vscode.commands.registerCommand(
+    "create.staticModal",
+    async (resource: vscode.Uri) => {
+      let targetFolder: string = getFilePath(resource);
+      createStaticModalTpl(targetFolder);
+    }
+  );
+  return [createConfirmModal, staticModal];
 }
-
 
 /**
  * @description 这里注册 vsc 文件菜单命令
- * @returns 
+ * @returns
  */
 function registerVscFoldMenu() {
   const vscCreateFile = vscode.commands.registerCommand(
@@ -90,7 +60,7 @@ function registerVscFoldMenu() {
       switch (fileType) {
         case "Component": {
           createComponentFlow(targetFolder);
-          formatterComponent(targetFolder);
+          formatterTypeScript(targetFolder);
           break;
         }
         case "Module": {
@@ -100,16 +70,86 @@ function registerVscFoldMenu() {
       }
     }
   );
-  return [
-    vscCreateFile
-  ]
+  return [vscCreateFile];
+}
+
+/**
+ * @description 创建确认弹窗
+ */
+async function createConfirmModalTpl(path: string) {
+  let templateKey = "";
+  const isCustom = await callVscSelect(["否", "是"], "是否自定义弹窗模版");
+  if (!isCustom) {
+    return;
+  }
+  if (isCustom === "是") {
+    templateKey = await callVscInput("请输入模版键名");
+  }
+  if (isCustom === "是" && templateKey === "") return;
+
+  const confirmModalInstance = new ConfirmModal(
+    path,
+    "",
+    isCustom,
+    templateKey
+  );
+  const { activeTextEditor } = vscode.window;
+  if (activeTextEditor) {
+    activeTextEditor
+      .edit((editBuilder) => {
+        editBuilder.replace(
+          activeTextEditor.selection,
+          confirmModalInstance.getModalTemplate()
+        );
+      })
+      .then(async () => {
+        // 这里不知道为啥,需要重新打开文件保存后才能再次写入
+        const document = await vscode.workspace.openTextDocument(path);
+        await vscode.window.showTextDocument(document);
+        await document.save();
+        confirmModalInstance.build();
+        formatterTypeScript(path);
+        callVscModal("已成功创建弹窗模版");
+      });
+  }
+}
+/**
+ * @description 创建 delon 组件弹窗
+ * @param path 
+ */
+async function createStaticModalTpl(path: string) {
+  let componentName = await callVscInput("请输入弹窗组件名");
+  const confirmModalInstance = new StaticModal(
+    path,
+    "",
+    componentName
+  );
+  const { activeTextEditor } = vscode.window;
+  if (activeTextEditor) {
+    activeTextEditor
+      .edit((editBuilder) => {
+        editBuilder.replace(
+          activeTextEditor.selection,
+          confirmModalInstance.getModalTemplate()
+        );
+      })
+      .then(async () => {
+        // 这里不知道为啥,需要重新打开文件保存后才能再次写入
+        const document = await vscode.workspace.openTextDocument(path);
+        await vscode.window.showTextDocument(document);
+        await document.save();
+        confirmModalInstance.build();
+        formatterTypeScript(path);
+        callVscModal("已成功创建弹窗模版");
+      });
+  }
 }
 
 /**
  * @description 格式化组件文件
  * @param createPath
  */
-function formatterComponent(createPath: string) {
+function formatterTypeScript(createPath: string) {
   let formatterListen = vscode.workspace.onDidOpenTextDocument((document) => {
     if (
       !document.uri.fsPath.includes(createPath) ||
@@ -138,9 +178,16 @@ async function createModuleFlow(targetFolder: string) {
   if (!isCreateRouteModule) {
     return;
   }
+  const isNeedShareModule = await callVscSelect(
+    ["否", "是"],
+    "是否需要引入 share module"
+  );
+  if (!isCreateRouteModule) {
+    return;
+  }
   // 模块路径
   const foldPath = path.join(targetFolder, name as string);
-  new CreateModuleFactory(foldPath, name, { isCreateRouteModule }).build();
+  new CreateModuleFactory(foldPath, name, { isCreateRouteModule, isNeedShareModule }).build();
   callVscModal(`模块 ${name} 成功创建`);
 }
 
@@ -253,7 +300,7 @@ function callVscSelect(
 
 /**
  * @description vsc 提示弹窗
- * @param text 
+ * @param text
  */
 function callVscModal(text: string) {
   vscode.window.showInformationMessage(text);

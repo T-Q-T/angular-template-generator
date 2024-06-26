@@ -1,7 +1,7 @@
 import { FileFactory } from "./file-factory";
 import * as fs from "fs";
-import { getConfirmTemplate, getHtmlTemplate } from "./template";
-import { addNzModalServiceToConstructor, addTemplateDeclaration, addTemplateRefAndViewChild } from "./utils";
+import { getConfirmTemplate, getHtmlTemplate, getStaticTemplate } from "./template";
+import { addServiceToConstructor, addTemplateDeclaration, addTemplateRefAndViewChild } from "./utils";
 //  这里是代码模版功能的创建工厂,用于读取创建代码模版
 
 
@@ -67,7 +67,7 @@ export class ConfirmModal extends FileFactory {
     getComponentTemplate(content: string): string {
         const hasWay = content.includes('NzModalService')
         if (!hasWay) {
-            content = addNzModalServiceToConstructor(content, 'private nzModalService: NzModalService')
+            content = addServiceToConstructor(content, 'private nzModalService: NzModalService')
             content = `import { NzModalService } from 'ng-zorro-antd/modal';\n` + content
         }
         return content
@@ -85,6 +85,41 @@ export class ConfirmModal extends FileFactory {
         const tsContent = this.getFileContent(), htmlContent = this.getCustomTemplateHtml()
         this.createFile(this.basePath, tsContent)
         this.createFile(this.htmlPath, htmlContent)
+        return this
+    }
+
+}
+
+
+export class StaticModal extends FileFactory {
+    constructor(path: string, name: string, componentName: string) {
+        super(path, name)
+        this.componentName = componentName
+    }
+    componentName!: string
+
+    getFileContent() {
+        let content = this.readFile(this.basePath)
+        content = this.getComponentTemplate(content)
+        return content
+    }
+
+    getComponentTemplate(content: string): string {
+        const hasWay = content.includes('ModalHelper')
+        if (!hasWay) {
+            content = addServiceToConstructor(content, 'private modal: ModalHelper')
+            content = `import { ModalHelper } from '@delon/theme';\n` + content
+        }
+        return content
+    }
+
+    getModalTemplate() {
+        return getStaticTemplate(this.componentName)
+    }
+
+    build() {
+        const tsContent = this.getFileContent()
+        this.createFile(this.basePath, tsContent)
         return this
     }
 
