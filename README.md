@@ -7,7 +7,7 @@
 用法1: 安装插件后文件树将会增加一个菜单栏选项，根据输入指引即可快速创建 angular 模块/组件的基本模版
 ![alt text](/src/resource/image.png) 
 
-用法2:代码块处讲增加菜单栏,可用于创建常用代码逻辑
+用法2:代码块处将增加菜单栏,可用于创建常用代码逻辑
 ![alt text](/src/resource/image-1.png)
 
 
