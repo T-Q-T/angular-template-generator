@@ -492,7 +492,7 @@ export class CreateModuleFactory extends CreateComponentFactory {
       opt.isNeedShareModule
     );
     this.createFile(
-      path.join(modulePath, `${name}.component.module.ts`),
+      path.join(modulePath, `${name}.module.ts`),
       moduleContent
     );
   }
@@ -513,7 +513,7 @@ export class CreateModuleFactory extends CreateComponentFactory {
   createRouteModuleTpl(name: string, modulePath: string) {
     const routeModuleContent = getRouteModuleTemplate(name as string);
     this.createFile(
-      path.join(modulePath, `${name}.route.ts`),
+      path.join(modulePath, `${name}.routing.module.ts`),
       routeModuleContent
     );
   }
