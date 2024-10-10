@@ -285,7 +285,7 @@ export class CreateComponentFactory extends FileFactory {
       const files = fs.readdirSync(currentPath);
       const moduleFile = files.find(
         (file) =>
-          file.includes("module.ts") && !file.includes("route.module.ts")
+          file.includes("module.ts") && !file.includes("routing.module.ts")
       );
       if (moduleFile) {
         return path.join(currentPath, moduleFile);
@@ -331,7 +331,7 @@ export class CreateComponentFactory extends FileFactory {
   private createScssTpl(scss: string, source: Source) {
     this.createFile(
       path.join(
-        this.basePath,
+        source === 'module' ? this.basePath + `/components/${this.name}` : this.basePath,
         source === "component" ? this.name : "",
         `${this.name}.component.scss`
       ),
@@ -342,8 +342,12 @@ export class CreateComponentFactory extends FileFactory {
   /**
    * @description 创建组件文件夹
    */
-  private createComponentFolder() {
-    this.createFold(path.join(this.basePath, this.name));
+  private createComponentFolder(source: Source) {
+    this.createFold(path.join(
+      this.basePath,
+      source !== "module" ? '' :'/components',
+      this.name
+    ));
   }
 
   /**
@@ -354,7 +358,7 @@ export class CreateComponentFactory extends FileFactory {
   private createHtmlTpl(html: string, source: Source = "component") {
     this.createFile(
       path.join(
-        this.basePath,
+        source === 'module' ? this.basePath + `/components/${this.name}` : this.basePath,
         source === "component" ? this.name : "",
         `${this.name}.component.html`
       ),
@@ -370,7 +374,7 @@ export class CreateComponentFactory extends FileFactory {
   private createTsTpl(ts: string, source: Source = "component") {
     this.createFile(
       path.join(
-        this.basePath,
+        source === 'module' ? this.basePath + `/components/${this.name}` : this.basePath,
         source === "component" ? this.name : "",
         `${this.name}.component.ts`
       ),
@@ -386,7 +390,7 @@ export class CreateComponentFactory extends FileFactory {
     component: ComponentClass,
     source: Source = "component"
   ) {
-    if (source !== "module") this.createComponentFolder();
+    this.createComponentFolder(source);
     this.createHtmlTpl(component.html, source);
     this.createScssTpl(component.scss, source);
     this.createTsTpl(component.ts, source);

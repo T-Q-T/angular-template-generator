@@ -123,7 +123,7 @@ export function getFormTs(name: string, schemaData?: string) {
 
 export function getTableHtml() {
   return `<nz-card>
-  <st #st [data]="url" [req]="req" [res]="res" [columns]="columns" [scroll]="{ x: '1300px' }"
+  <st #st [data]="params" [req]="req" [res]="res" [columns]="columns" [scroll]="{ x: '1300px' }"
     (change)="dataChange($event)">
   </st>
 </nz-card>`;
@@ -190,14 +190,14 @@ export function getModuleTemplate(
   const CamelCaseName = firstLetterCamelCaseFormatter(name as string);
 
   const routeImportStatement = isCreateRouteModule
-    ? `import { ${CamelCaseName}RouteModule } from './${name}.route';`
+    ? `import { ${CamelCaseName}RouteModule } from './${name}.routing';`
     : "";
   const routeModuleStatement = isCreateRouteModule
     ? `${CamelCaseName}RouteModule`
     : "";
   return `import { NgModule } from '@angular/core';
     import { CommonModule } from '@angular/common';
-    import { ${CamelCaseName}Component } from './${name}.component';
+    import { ${CamelCaseName}Component } from './components/${name}/${name}.component';
     ${isNeedShareModule ? "import { SharedModule } from '@shared';" : ""}
     ${routeImportStatement}
   

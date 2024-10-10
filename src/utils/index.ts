@@ -124,7 +124,7 @@ export function addTemplateRefAndViewChild(importStatement:string) {
 export function addServiceToConstructor(input:string,content:string) {
   const regex = /constructor\s*\(([^)]*)\)\s*\{/;
   return input.replace(regex, (match, params) => {
-      const paramList = params.split('\n').map((param:string) => param.trim());
+      const paramList = params.split('\n').map((param:string) => param.trim().replace(',',''));
       paramList.push(content);
       const newParams = paramList.filter((item:string)=>item).join(',\n  ');
 
