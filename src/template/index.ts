@@ -190,7 +190,7 @@ export function getModuleTemplate(
   const CamelCaseName = firstLetterCamelCaseFormatter(name as string);
 
   const routeImportStatement = isCreateRouteModule
-    ? `import { ${CamelCaseName}RouteModule } from './${name}.routing';`
+    ? `import { ${CamelCaseName}RouteModule } from './${name}.routing.module';`
     : "";
   const routeModuleStatement = isCreateRouteModule
     ? `${CamelCaseName}RouteModule`
@@ -233,7 +233,7 @@ export function getRouteModuleTemplate(name: string) {
   const CamelCaseName = firstLetterCamelCaseFormatter(name as string);
   return `import { NgModule } from '@angular/core';
     import { RouterModule, Routes } from '@angular/router';
-    import { ${CamelCaseName}Component } from './${name}.component';
+    import { ${CamelCaseName}Component } from './components/${name}/${name}.component';
     
     
     const routes: Routes = [

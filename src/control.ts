@@ -276,8 +276,8 @@ function getFilePath(resource: vscode.Uri) {
 function callVscInput<T>(prompt: T): Promise<T> {
   return new Promise((resolve) => {
     vscode.window
-      .showInputBox({ prompt: prompt as string, ignoreFocusOut: true })
-      .then((res) => [resolve(res as T)]);
+      .showInputBox({ prompt: prompt as unknown as string, ignoreFocusOut: true })
+      .then((res) => [resolve(res as unknown as T)]);
   });
 }
 
