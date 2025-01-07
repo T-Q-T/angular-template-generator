@@ -2,7 +2,7 @@
 
 这是一个快速生成 angular 常规模版的插件,你的 angular 文件创建帕鲁
 
-使用快捷键 Ctrl+Shift+P（在 macOS 上为 Cmd+Shift+P），然后输入 Extensions: Install from VSIX
+暂未发布到商店，可直接使用打包后文件安装，安装方式-使用快捷键 Ctrl+Shift+P（在 macOS 上为 Cmd+Shift+P），然后输入 Extensions: Install from VSIX ，选择此项目 build 后生成的文件
 
 # 如何使用😄:
 
@@ -19,8 +19,14 @@
 ; 分割每个 item 对象;
 | 分割每个枚举
 
+目前支持生成
+ -表单组件
+ -表格组件
+ -表单表格组件
+ -Angular 模块（包含子路由模块）
+
 # 详细用法
-如根据指引输入数据"测试1,test1,select,选项1,0|选项2,1;" 和 "测试2，test2”与“列1，column1；列2，column2" 即可生成如下组件并自动添加声明到离其最近的模块 <br>
+如根据指引输入数据"测试1,test1,select,选项1,0|选项2,1;" 和 "测试2，test2”与“列1，column1；列2，column2" 即可生成如下组件并**自动添加声明到离其最近的模块** <br>
 输入
 ![alt text](image-1.png)
 ![alt text](image-2.png)
@@ -28,3 +34,10 @@
 生成结果
 ![alt text](image.png)
 ![alt text](image-3.png)
+
+
+# 弹窗
+在代码块处点击右键可以一键创建弹窗，输入希望的自定义模版名即可，**相关的服务及 Angular 模块无需编写，插件会自动检测并自动声明到文件顶部**
+
+![alt text](image-4.png)
+![alt text](image-5.png)
