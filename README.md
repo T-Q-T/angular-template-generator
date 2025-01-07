@@ -18,3 +18,13 @@
 , 分割对象属性;
 ; 分割每个 item 对象;
 | 分割每个枚举
+
+# 详细用法
+如根据指引输入数据"测试1,test1,select,选项1,0|选项2,1;" 和 "测试2，test2”与“列1，column1；列2，column2" 即可生成如下组件并自动添加声明到离其最近的模块
+输入
+![alt text](image-1.png)
+![alt text](image-2.png)
+
+结果
+![alt text](image.png)
+![alt text](image-3.png)
